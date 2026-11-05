@@ -11,25 +11,22 @@ class MainPageLocators:
         "//a[contains(., 'Лента Заказов')]"
     )
 
-    INGREDIENTS = (
-        By.XPATH,
-        "//*[contains(@class, 'BurgerIngredient_ingredient')]"
-    )
     FIRST_INGREDIENT = (
         By.XPATH,
-        "//*[contains(@class, 'BurgerIngredient_ingredient')]"
+        "(//*[contains(@class, 'BurgerIngredient_ingredient')])[1]"
+    )
+
+    INGREDIENT_COUNTER = (
+        By.XPATH,
+        ".//*[contains(@class, 'counter') and @class]"
     )
 
     INGREDIENT_MODAL = (
         By.XPATH,
-        "//*[contains(@class, 'Modal_modal')]"
+        "//*[contains(@class, 'Modal_modal') and not(contains(@class, 'overlay'))]"
     )
+
     INGREDIENT_MODAL_CLOSE_BUTTON = (
-        By.CSS_SELECTOR,
-        "div[class*='Modal_modal']:not([class*='overlay']) button[class*='Modal_modal__close']"
-    )
-    
-    ORDER_MODAL_CLOSE_BUTTON = (
         By.CSS_SELECTOR,
         "div[class*='Modal_modal']:not([class*='overlay']) button[class*='Modal_modal__close']"
     )
@@ -37,15 +34,6 @@ class MainPageLocators:
     ORDER_BUTTON = (
         By.XPATH,
         "//button[contains(., 'Оформить заказ')]"
-    )
-    ORDER_COUNTER = (
-        By.XPATH,
-        "//*[contains(@class, 'counter')]"
-    )
-
-    CONSTRUCTOR_DROP_AREA = (
-        By.CSS_SELECTOR,
-        "section[class*='BurgerConstructor_basket']"
     )
 
     BUN_DROP_AREA = (
@@ -75,7 +63,7 @@ class MainPageLocators:
 
     ORDER_MODAL = (
         By.XPATH,
-        "//*[contains(@class, 'Modal_modal')]"
+        "//*[contains(@class, 'Modal_modal') and not(contains(@class, 'overlay'))]"
     )
 
     ORDER_NUMBER = (
@@ -93,7 +81,10 @@ class MainPageLocators:
         "img[alt='loading animation']"
     )
 
-
+    ORDER_MODAL_CLOSE_BUTTON = (
+        By.CSS_SELECTOR,
+        "div[class*='Modal_modal']:not([class*='overlay']) button[class*='Modal_modal__close']"
+    )
 
 class OrderFeedPageLocators:
     ORDER_FEED_TITLE = (
@@ -105,7 +96,7 @@ class OrderFeedPageLocators:
         By.XPATH,
         "//p[text()='Выполнено за все время:']/following-sibling::p"
     )
-    
+
     TODAY_ORDERS_COUNTER = (
         By.XPATH,
         "//p[text()='Выполнено за сегодня:']/following-sibling::p"
@@ -116,7 +107,7 @@ class OrderFeedPageLocators:
         "//*[contains(text(), 'В работе')]"
     )
 
-    ORDER_NUMBER_IN_PROGRESS = (
+    ORDERS_IN_PROGRESS_TEXT = (
         By.XPATH,
-        "//*[contains(text(), 'В работе')]/following-sibling::*"
+        "//*[contains(text(), 'В работе')]/.."
     )
