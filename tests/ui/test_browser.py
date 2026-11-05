@@ -1,9 +1,4 @@
 import allure
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver import ActionChains
-from locators.locators import MainPageLocators
 from pages.main_page import MainPage
 from pages.order_feed_page import OrderFeedPage
 
@@ -11,25 +6,17 @@ from pages.order_feed_page import OrderFeedPage
 @allure.feature("Навигация")
 class TestNavigation:
 
-    @allure.title("Переход в конструктор")
+    @allure.title("Переход в конструктор из ленты заказов")
     def test_constructor_button(self, driver):
         main_page = MainPage(driver)
-
-        main_page.click_constructor()
-
-        assert driver.current_url == (
-            "https://qa-stellarburgers.education-services.ru/"
-        )
-
-    @allure.title("Переход в ленту заказов")
-    def test_order_feed_button(self, driver):
-        main_page = MainPage(driver)
         order_feed_page = OrderFeedPage(driver)
-
+    
         main_page.click_order_feed()
-
-        assert driver.current_url.endswith("/feed")
         assert order_feed_page.is_order_feed_displayed()
+    
+        main_page.click_constructor()
+    
+        assert main_page.is_constructor_displayed()
 
 
 @allure.feature("Ингредиенты")
@@ -52,100 +39,20 @@ class TestIngredientModal:
 
         main_page.close_ingredient_modal()
 
-        WebDriverWait(driver, 10).until(
-            EC.invisibility_of_element_located(
-                MainPageLocators.INGREDIENT_MODAL
-            )
-        )
+        assert main_page.is_ingredient_modal_closed()
 
 
 @allure.feature("Конструктор")
 class TestIngredientCounter:
 
-
-
-
     @allure.title("Добавление булочки увеличивает счётчик ингредиента")
     def test_ingredient_counter_increases(self, driver):
-        ingredient = driver.find_element(
-            *MainPageLocators.FIRST_INGREDIENT
-        )
-    
-        counter = ingredient.find_element(
-            By.XPATH,
-            ".//*[contains(@class, 'counter')][1]"
-        )
-    
-        counter_before = counter.text
-    
-        drop_area = driver.find_element(
-            *MainPageLocators.BUN_DROP_AREA
-        )
-    
-        driver.execute_script("""
-            const ingredient = arguments[0];
-            const dropArea = arguments[1];
-    
-            const dataTransfer = new DataTransfer();
-    
-            ingredient.dispatchEvent(
-                new DragEvent('dragstart', {
-                    bubbles: true,
-                    cancelable: true,
-                    dataTransfer: dataTransfer
-                })
-            );
-    
-            dropArea.dispatchEvent(
-                new DragEvent('dragenter', {
-                    bubbles: true,
-                    cancelable: true,
-                    dataTransfer: dataTransfer
-                })
-            );
-    
-            dropArea.dispatchEvent(
-                new DragEvent('dragover', {
-                    bubbles: true,
-                    cancelable: true,
-                    dataTransfer: dataTransfer
-                })
-            );
-    
-            dropArea.dispatchEvent(
-                new DragEvent('drop', {
-                    bubbles: true,
-                    cancelable: true,
-                    dataTransfer: dataTransfer
-                })
-            );
-    
-            ingredient.dispatchEvent(
-                new DragEvent('dragend', {
-                    bubbles: true,
-                    cancelable: true,
-                    dataTransfer: dataTransfer
-                })
-            );
-        """, ingredient, drop_area)
-    
-        WebDriverWait(driver, 10).until(
-            lambda d: d.find_element(
-                *MainPageLocators.FIRST_INGREDIENT
-            ).find_element(
-                By.XPATH,
-                ".//*[contains(@class, 'counter')][1]"
-            ).text != counter_before
-        )
-    
-        counter_after = driver.find_element(
-            *MainPageLocators.FIRST_INGREDIENT
-        ).find_element(
-            By.XPATH,
-            ".//*[contains(@class, 'counter')][1]"
-        ).text
-    
+        main_page = MainPage(driver)
+
+        counter_after = main_page.add_bun_and_get_counter()
+
         assert counter_after == "2"
+
 
 @allure.feature("Авторизация")
 class TestLogin:
@@ -155,20 +62,14 @@ class TestLogin:
         user_data, _ = registered_user
 
         main_page = MainPage(driver)
+
         main_page.login(
             user_data["email"],
             user_data["password"]
         )
 
-        WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located(
-                MainPageLocators.ORDER_BUTTON
-            )
-        )
+        assert main_page.is_constructor_displayed()
 
-        assert driver.find_element(
-            *MainPageLocators.ORDER_BUTTON
-        ).is_displayed()
 
 @allure.feature("Создание заказа")
 class TestCreateOrder:
@@ -185,25 +86,18 @@ class TestCreateOrder:
         )
 
         main_page.add_first_ingredient_to_constructor()
-
         main_page.click_order_button()
 
-        order_modal = WebDriverWait(driver, 30).until(
-            EC.visibility_of_element_located(
-                MainPageLocators.ORDER_MODAL
-            )
-        )
+        assert main_page.is_order_modal_displayed()
 
-        assert order_modal.is_displayed()
+        main_page.wait_for_order_loading()
 
-        order_number = WebDriverWait(driver, 30).until(
-            EC.visibility_of_element_located(
-                MainPageLocators.ORDER_NUMBER
-            )
-        )
+        order_number = main_page.get_order_number()
 
-        assert order_number.text.strip() != ""
+        assert order_number != ""
 
+
+@allure.feature("Лента заказов")
 class TestOrderFeedCounters:
 
     @allure.title("Проверка отображения счётчиков заказов")
@@ -213,16 +107,12 @@ class TestOrderFeedCounters:
 
         main_page.click_order_feed()
 
-        WebDriverWait(driver, 20).until(
-            lambda driver: "Выполнено за все время:" in
-            driver.find_element(By.TAG_NAME, "body").text
-        )
-
         total_count = order_feed_page.get_total_orders_count()
         today_count = order_feed_page.get_today_orders_count()
 
         assert total_count >= 0
         assert today_count >= 0
+
 
 class TestTotalOrdersCounter:
 
@@ -239,22 +129,8 @@ class TestTotalOrdersCounter:
             user_data["email"],
             user_data["password"]
         )
-        
-        WebDriverWait(driver, 10).until(
-            lambda driver: all(
-                not overlay.is_displayed()
-                for overlay in driver.find_elements(
-                    *MainPageLocators.MODAL_OVERLAY
-                )
-            )
-        )
-        
-        main_page.click_order_feed()
 
-        WebDriverWait(driver, 20).until(
-            lambda driver: "Выполнено за все время:" in
-            driver.find_element(By.TAG_NAME, "body").text
-        )
+        main_page.click_order_feed()
 
         initial_count = order_feed_page.get_total_orders_count()
 
@@ -262,36 +138,18 @@ class TestTotalOrdersCounter:
         main_page.add_first_ingredient_to_constructor()
         main_page.click_order_button()
 
-        WebDriverWait(driver, 20).until(
-            EC.visibility_of_element_located(
-                MainPageLocators.ORDER_MODAL
-            )
-        )
+        assert main_page.is_order_modal_displayed()
 
-        WebDriverWait(driver, 30).until(
-            EC.invisibility_of_element_located(
-                MainPageLocators.LOADING_MODAL
-            )
-        )
-
+        main_page.wait_for_order_loading()
         main_page.close_order_modal()
-        
-        WebDriverWait(driver, 10).until(
-            EC.invisibility_of_element_located(
-                MainPageLocators.ORDER_MODAL
-            )
-        )
-        
+        assert main_page.wait_for_order_modal_closed()
+
         main_page.click_order_feed()
 
-        WebDriverWait(driver, 30).until(
-            lambda driver:
-            order_feed_page.get_total_orders_count() > initial_count
+        assert order_feed_page.wait_for_total_orders_increase(
+            initial_count
         )
 
-        final_count = order_feed_page.get_total_orders_count()
-
-        assert final_count > initial_count
 
 class TestTodayOrdersCounter:
 
@@ -309,21 +167,7 @@ class TestTodayOrdersCounter:
             user_data["password"]
         )
 
-        WebDriverWait(driver, 10).until(
-            lambda driver: all(
-                not overlay.is_displayed()
-                for overlay in driver.find_elements(
-                    *MainPageLocators.MODAL_OVERLAY
-                )
-            )
-        )
-
         main_page.click_order_feed()
-
-        WebDriverWait(driver, 20).until(
-            lambda driver: "Выполнено за сегодня:" in
-            driver.find_element(By.TAG_NAME, "body").text
-        )
 
         initial_count = order_feed_page.get_today_orders_count()
 
@@ -331,36 +175,18 @@ class TestTodayOrdersCounter:
         main_page.add_first_ingredient_to_constructor()
         main_page.click_order_button()
 
-        WebDriverWait(driver, 20).until(
-            EC.visibility_of_element_located(
-                MainPageLocators.ORDER_MODAL
-            )
-        )
+        assert main_page.is_order_modal_displayed()
 
-        WebDriverWait(driver, 30).until(
-            EC.invisibility_of_element_located(
-                MainPageLocators.LOADING_MODAL
-            )
-        )
-
+        main_page.wait_for_order_loading()
         main_page.close_order_modal()
-
-        WebDriverWait(driver, 10).until(
-            EC.invisibility_of_element_located(
-                MainPageLocators.ORDER_MODAL
-            )
-        )
+        assert main_page.wait_for_order_modal_closed()
 
         main_page.click_order_feed()
 
-        WebDriverWait(driver, 30).until(
-            lambda driver:
-            order_feed_page.get_today_orders_count() > initial_count
+        assert order_feed_page.wait_for_today_orders_increase(
+            initial_count
         )
 
-        final_count = order_feed_page.get_today_orders_count()
-
-        assert final_count > initial_count
 
 class TestOrdersInProgress:
 
@@ -369,58 +195,30 @@ class TestOrdersInProgress:
         self, driver, registered_user
     ):
         user_data, _ = registered_user
-    
+
         main_page = MainPage(driver)
         order_feed_page = OrderFeedPage(driver)
-    
+
         main_page.login(
             user_data["email"],
             user_data["password"]
         )
-    
-        WebDriverWait(driver, 10).until(
-            lambda driver: all(
-                not overlay.is_displayed()
-                for overlay in driver.find_elements(
-                    *MainPageLocators.MODAL_OVERLAY
-                )
-            )
-        )
-    
+
         main_page.add_first_ingredient_to_constructor()
         main_page.click_order_button()
-    
-        WebDriverWait(driver, 20).until(
-            EC.visibility_of_element_located(
-                MainPageLocators.ORDER_MODAL
-            )
-        )
-    
-        WebDriverWait(driver, 30).until(
-            EC.invisibility_of_element_located(
-                MainPageLocators.LOADING_MODAL
-            )
-        )
-    
-        order_number = WebDriverWait(driver, 10).until(
-            lambda driver: driver.find_element(
-                *MainPageLocators.ORDER_NUMBER
-            ).text.strip()
-        )
-    
+
+        assert main_page.is_constructor_displayed()
+
+        main_page.wait_for_order_loading()
+        order_number = main_page.get_order_number()
+
+        assert order_number != ""
+
         main_page.close_order_modal()
-    
-        WebDriverWait(driver, 10).until(
-            EC.invisibility_of_element_located(
-                MainPageLocators.ORDER_MODAL
-            )
-        )
-    
+        assert main_page.wait_for_order_modal_closed()
+
         main_page.click_order_feed()
-    
-        WebDriverWait(driver, 30).until(
-            lambda driver:
-            order_feed_page.is_order_number_in_progress(order_number)
+
+        assert order_feed_page.wait_for_order_in_progress(
+            order_number
         )
-    
-        assert order_feed_page.is_order_number_in_progress(order_number)
