@@ -13,7 +13,8 @@ class MainPageLocators:
 
     FIRST_INGREDIENT = (
         By.XPATH,
-        "(//*[contains(@class, 'BurgerIngredient_ingredient')])[1]"
+        "//*[contains(@class, 'BurgerIngredient_ingredient')"
+        " and .//p[normalize-space()='Краторная булка N-200i']]"
     )
 
     INGREDIENT_COUNTER = (
