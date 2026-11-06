@@ -1,10 +1,10 @@
-import uuid
 import pytest
 import requests
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from data.urls import REGISTER_URL, USER_URL
+from helpers.user_data import generate_user_data
 
 
 @pytest.fixture(params=["chrome", "firefox"])
@@ -37,13 +37,10 @@ def driver(request):
 
     browser.quit()
 
+
 @pytest.fixture
 def user_data():
-    return {
-        "email": f"test_{uuid.uuid4().hex[:10]}@example.com",
-        "password": "TestPassword123",
-        "name": f"TestUser{uuid.uuid4().hex[:6]}"
-    }
+    return generate_user_data()
 
 
 @pytest.fixture
